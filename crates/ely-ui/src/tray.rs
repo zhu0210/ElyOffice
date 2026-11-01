@@ -4,7 +4,9 @@ use std::rc::Rc;
 
 use ely_gpui_component::desktop::{TrayIcon, TrayItem, TrayLook};
 use ely_platform::AppId;
-use gpui::{AnyWindowHandle, App, Entity, Global, QuitMode, Window, WindowId};
+#[cfg(not(any(target_os = "android", target_os = "ios")))]
+use gpui::WindowId;
+use gpui::{AnyWindowHandle, App, Entity, Global, QuitMode, Window};
 
 use crate::{Root, i18n};
 
@@ -23,6 +25,7 @@ struct Main {
 
 impl Global for Main {}
 
+#[cfg(not(any(target_os = "android", target_os = "ios")))]
 pub(crate) fn set_main(app: AppId, window: AnyWindowHandle, cx: &mut App) {
     match cx.try_global::<Main>().is_some() {
         true => cx.global_mut::<Main>().window = Some(window),
@@ -30,6 +33,7 @@ pub(crate) fn set_main(app: AppId, window: AnyWindowHandle, cx: &mut App) {
     }
 }
 
+#[cfg(not(any(target_os = "android", target_os = "ios")))]
 /// Main window closed: true quits; a tray keeps the app.
 pub(crate) fn closed(window: WindowId, cx: &mut App) -> bool {
     let Some(main) = cx.try_global::<Main>() else {
