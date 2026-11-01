@@ -70,6 +70,7 @@ impl Smoke {
         Self::from_value(env::value("ELY_SMOKE").as_deref())
     }
 
+    #[cfg(not(any(target_os = "android", target_os = "ios")))]
     fn from_value(value: Option<&str>) -> Self {
         match value {
             None => Smoke::Off,

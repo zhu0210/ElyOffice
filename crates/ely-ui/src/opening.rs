@@ -1,18 +1,20 @@
 //! Files handed to the app: arguments, Finder, second copies.
 
-use std::{
-    ffi::OsString,
-    io,
-    path::{Path, PathBuf},
-    time::Duration,
-};
+use std::path::{Path, PathBuf};
+#[cfg(not(any(target_os = "android", target_os = "ios")))]
+use std::{ffi::OsString, io, time::Duration};
 
+#[cfg(not(any(target_os = "android", target_os = "ios")))]
 use ely_platform::instance::Door;
 use futures::{StreamExt, channel::mpsc};
-use gpui::{App, Application, Global};
+#[cfg(not(any(target_os = "android", target_os = "ios")))]
+use gpui::Application;
+use gpui::{App, Global};
 
+#[cfg(not(any(target_os = "android", target_os = "ios")))]
 /// How long a hand-over waits for the window.
 const TAKING: Duration = Duration::from_secs(5);
+#[cfg(not(any(target_os = "android", target_os = "ios")))]
 /// How long a request waits for the app's answer.
 const ANSWERING: Duration = Duration::from_secs(80);
 
@@ -20,6 +22,7 @@ struct Asked(Option<mpsc::UnboundedReceiver<PathBuf>>);
 
 impl Global for Asked {}
 
+#[cfg(not(any(target_os = "android", target_os = "ios")))]
 /// A second copy's files; `taken` answers once they are queued.
 pub(crate) struct Hand {
     files: Vec<PathBuf>,
@@ -51,15 +54,19 @@ impl Ask {
 type Answer = dyn Fn(Ask, &mut App);
 
 /// The app's answers to other programs; none refuses them.
+// Phones take no requests from other programs.
+#[cfg_attr(any(target_os = "android", target_os = "ios"), allow(dead_code))]
 struct Answers(std::rc::Rc<Answer>);
 impl Global for Answers {}
 
+#[cfg(not(any(target_os = "android", target_os = "ios")))]
 /// What the system and other copies hand the running app.
 pub(crate) struct Handed {
     asked: mpsc::UnboundedReceiver<PathBuf>,
     hands: Hands,
 }
 
+#[cfg(not(any(target_os = "android", target_os = "ios")))]
 /// Second copies' hand-overs, for the main window.
 pub(crate) struct Hands {
     hands: mpsc::UnboundedReceiver<Hand>,
@@ -67,11 +74,13 @@ pub(crate) struct Hands {
     asks: mpsc::UnboundedReceiver<Ask>,
 }
 
+#[cfg(not(any(target_os = "android", target_os = "ios")))]
 /// Launch arguments, relative to where the app was started.
 pub(crate) fn launch_args() -> io::Result<Vec<PathBuf>> {
     std::env::args_os().skip(1).map(launch_arg).collect()
 }
 
+#[cfg(not(any(target_os = "android", target_os = "ios")))]
 /// A path, a `file://` URL, or a whole mail link.
 fn launch_arg(arg: OsString) -> io::Result<PathBuf> {
     match arg.to_str() {
@@ -92,6 +101,7 @@ pub fn mail_link(opened: &Path) -> Option<&str> {
     opened.to_str().filter(|text| is_mail_link(text))
 }
 
+#[cfg(not(any(target_os = "android", target_os = "ios")))]
 /// Queues `files`, then files the system or copies ask for.
 pub(crate) fn listen(application: &Application, files: Vec<PathBuf>, door: Door) -> io::Result<Handed> {
     let (queue, asked) = mpsc::unbounded();
@@ -129,6 +139,7 @@ pub(crate) fn listen(application: &Application, files: Vec<PathBuf>, door: Door)
     Ok(Handed { asked, hands: Hands { hands, queue, asks } })
 }
 
+#[cfg(not(any(target_os = "android", target_os = "ios")))]
 /// Keeps the files for `on_open`; the hand-overs go to `home`.
 pub(crate) fn keep(handed: Handed, cx: &mut App) -> Hands {
     cx.set_global(Asked(Some(handed.asked)));
@@ -168,6 +179,7 @@ pub fn on_ask(cx: &mut App, answer: impl Fn(Ask, &mut App) + 'static) {
     cx.set_global(Answers(std::rc::Rc::new(answer)));
 }
 
+#[cfg(not(any(target_os = "android", target_os = "ios")))]
 /// Each hand-over: the main window forward, then its files queued.
 pub(crate) fn home(app: ely_platform::AppId, hands: Hands, cx: &mut App) {
     let Hands { mut hands, queue, mut asks } = hands;
@@ -196,6 +208,7 @@ pub(crate) fn home(app: ely_platform::AppId, hands: Hands, cx: &mut App) {
     .detach();
 }
 
+#[cfg(not(any(target_os = "android", target_os = "ios")))]
 /// A `file://` URL's path, percent escapes decoded.
 fn file_path(url: &str) -> Option<PathBuf> {
     let rest = url.strip_prefix("file://")?;

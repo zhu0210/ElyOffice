@@ -2,12 +2,9 @@
 
 mod view;
 
-use std::{
-    io,
-    path::PathBuf,
-    process::Stdio,
-    sync::atomic::AtomicBool,
-};
+use std::{path::PathBuf, sync::atomic::AtomicBool};
+#[cfg(not(any(target_os = "android", target_os = "ios")))]
+use std::{io, process::Stdio};
 
 use ely_platform::{
     AppId,
@@ -85,6 +82,7 @@ pub fn quit_stopped(cx: &mut App) {
     }
 }
 
+#[cfg(not(any(target_os = "android", target_os = "ios")))]
 /// Where a failed install leaves its reason.
 fn note_path(app: AppId) -> io::Result<PathBuf> {
     Ok(ely_platform::data_dir(app).map_err(io::Error::other)?.join("updates/failed.txt"))
@@ -125,6 +123,7 @@ pub fn installer(app: AppId) -> Option<i32> {
     Some(i32::from(installed.is_err()))
 }
 
+#[cfg(not(any(target_os = "android", target_os = "ios")))]
 /// An installed app's updater; checks at launch if chosen.
 pub(crate) fn install(app: AppId, cx: &mut App) {
     let installed = match ely_platform::install::running(app.slug()) {
@@ -332,6 +331,7 @@ impl Updates {
         crate::commands::quit(cx);
     }
 
+    #[cfg(not(any(target_os = "android", target_os = "ios")))]
     /// At the real quit: the installer waits for this process.
     fn start_installer(&mut self) {
         let Some(file) = self.pending.take() else {
