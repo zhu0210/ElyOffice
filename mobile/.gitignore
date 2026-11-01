@@ -3,3 +3,6 @@ android/app/build/
 android/build/
 android/app/src/main/jniLibs/
 android/local.properties
+ios/ElyMark.xcodeproj/
+ios/build/
+ios/ipa/

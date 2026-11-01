@@ -65,10 +65,50 @@ jobs:
 
   ios:
     runs-on: macos-15
-    timeout-minutes: 90
+    timeout-minutes: 120
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - name: ElyMark's library compiles for iOS
+      - name: Xcode project
+        run: brew install xcodegen && (cd mobile/ios && xcodegen generate --spec project.yml)
+      - name: Simulator build
         run: |
-          rustup target add aarch64-apple-ios
-          cargo check -p ely-mark --lib --target aarch64-apple-ios
+          ELY_SIM=1 mobile/ios/build.sh
+          cd mobile/ios && xcodebuild -project ElyMark.xcodeproj -scheme ElyMark \
+            -configuration Debug -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' \
+            -derivedDataPath build CODE_SIGNING_ALLOWED=NO build
+      - name: ElyMark on the simulator
+        run: |
+          set -uo pipefail
+          mkdir -p smoke
+          sim=$(xcrun simctl list devices available | grep -m1 "iPhone" | sed -E 's/.*\(([A-F0-9-]+)\).*/\1/')
+          xcrun simctl boot "$sim" && xcrun simctl bootstatus "$sim" -b
+          xcrun simctl install "$sim" mobile/ios/build/Build/Products/Debug-iphonesimulator/ElyMark.app
+          xcrun simctl launch "$sim" com.elyoffice.mark
+          sleep 30
+          xcrun simctl io "$sim" screenshot smoke/screenshot.png
+          xcrun simctl spawn "$sim" log show --last 3m --style compact --predicate 'process == "ElyMark"' > smoke/log.txt || true
+          # Captured first: grep -q's early exit fails pipefail.
+          services=$(xcrun simctl spawn "$sim" launchctl list)
+          grep -q com.elyoffice.mark <<<"$services" || { echo "::error::ElyMark is not running"; tail -40 smoke/log.txt; exit 1; }
+      - name: Screenshot and logs
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: ios-smoke
+          path: smoke/
+          retention-days: 14
+      - name: Unsigned IPA for devices
+        run: |
+          rm -rf target/aarch64-apple-ios-sim
+          ELY_RELEASE=1 mobile/ios/build.sh
+          cd mobile/ios && xcodebuild -project ElyMark.xcodeproj -scheme ElyMark \
+            -configuration Release -sdk iphoneos -destination 'generic/platform=iOS' \
+            -derivedDataPath build CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" build
+          mkdir -p ipa/Payload && cp -R build/Build/Products/Release-iphoneos/ElyMark.app ipa/Payload/
+          (cd ipa && zip -qr ElyMark-unsigned.ipa Payload)
+      # SideStore signs it on the device.
+      - uses: actions/upload-artifact@v7
+        with:
+          name: ElyMark-unsigned.ipa
+          path: mobile/ios/ipa/ElyMark-unsigned.ipa
+          retention-days: 14

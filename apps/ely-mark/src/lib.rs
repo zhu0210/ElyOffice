@@ -32,3 +32,10 @@ mod view;
 fn android_main(activity: ely_ui::AndroidApp) {
     ely_ui::run_android(activity, ely_platform::AppId::Mark, desk::open);
 }
+
+/// The iOS host's app delegate enters here.
+#[cfg(target_os = "ios")]
+#[unsafe(no_mangle)]
+pub extern "C" fn ely_ios_main() {
+    ely_ui::run_ios(ely_platform::AppId::Mark, desk::open);
+}

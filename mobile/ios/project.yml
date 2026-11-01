@@ -1,0 +1,53 @@
+# xcodegen spec; build.sh builds the Rust library first.
+name: ElyMark
+options:
+  bundleIdPrefix: com.elyoffice
+  deploymentTarget:
+    iOS: "16.0"
+targets:
+  ElyMark:
+    type: application
+    platform: iOS
+    sources:
+      - path: main.m
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.elyoffice.mark
+        PRODUCT_NAME: ElyMark
+        INFOPLIST_FILE: Info.plist
+        TARGETED_DEVICE_FAMILY: "1,2"
+        CLANG_ENABLE_OBJC_ARC: YES
+        ENABLE_DEBUG_DYLIB: NO
+        ARCHS: arm64
+        "ELY_LIB[sdk=iphonesimulator*]": "$(PROJECT_DIR)/../../target/aarch64-apple-ios-sim/$(ELY_PROFILE)/libely_mark.a"
+        "ELY_LIB[sdk=iphoneos*]": "$(PROJECT_DIR)/../../target/aarch64-apple-ios/$(ELY_PROFILE)/libely_mark.a"
+        OTHER_LDFLAGS:
+          - "-force_load"
+          - "$(ELY_LIB)"
+          - "-lc++"
+          - "-ObjC"
+          - "-framework UIKit"
+          - "-framework Metal"
+          - "-framework MetalKit"
+          - "-framework QuartzCore"
+          - "-framework CoreGraphics"
+          - "-framework CoreText"
+          - "-framework CoreFoundation"
+          - "-framework Foundation"
+          - "-framework Security"
+          - "-framework SystemConfiguration"
+          - "-framework AudioToolbox"
+          - "-framework WebKit"
+          - "-framework CoreMedia"
+          - "-framework CoreVideo"
+          - "-framework AVFoundation"
+          - "-framework LocalAuthentication"
+          - "-framework Contacts"
+          - "-framework EventKit"
+          - "-framework StoreKit"
+          - "-framework CoreMotion"
+      configs:
+        Debug:
+          ELY_PROFILE: debug
+        Release:
+          ELY_PROFILE: release

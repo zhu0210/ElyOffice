@@ -29,6 +29,8 @@ pub use opening::install_no_launch_files;
 pub use android_activity::AndroidApp;
 #[cfg(target_os = "android")]
 pub use phone::run_android;
+#[cfg(target_os = "ios")]
+pub use phone::run_ios;
 #[cfg(not(any(target_os = "android", target_os = "ios")))]
 pub use run::run;
 pub use run::window_options;
