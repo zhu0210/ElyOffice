@@ -234,7 +234,7 @@ scripts/deny.sh [根] [检查...]  cargo-deny：安全公告、yanked、许可�
 tests/scripts/deny-rules.sh    deny.sh：列着的重复组过、多余或无着落的 skip 败、去掉的旧版回来败（临时 crate）
 scripts/panics.py [根]          非测试代码的 expect、unwrap、panic!、unreachable!（clippy 量，构建脚本与 ely-mail-fake 除外）与 scripts/panics.tsv 逐条相符、各带理由，任一种类不多于 HEAD 的表；`--sites` 列出本机各处
 tests/scripts/panics-rules.sh  panics.py：列着的过、测试模块与 build.rs 不算、新处、增多、消失、无理由皆败（临时 crate）
-ELY_ABI=arm64-v8a mobile/android/build.sh  ElyMark 的调试 APK（cargo-ndk，ANDROID_NDK_HOME 指 NDK；库去调试信息后打包）；x86_64 给模拟器
+ELY_ABI=arm64-v8a mobile/android/build.sh  ElyMark 的调试 APK（cargo-ndk，ANDROID_NDK_HOME 指 NDK；库去调试信息后打包）；x86_64 给模拟器，`ELY_RELEASE=1` 出 release（模拟器的 SwiftShader 拒收调试构建里 wgpu 带调试信息的着色器）
 mobile/android/smoke.sh        模拟器上装、启动 ElyMark，截图与 logcat 存到 smoke/，窗口未开即失败（mobile.yml 调用）
 cargo check --workspace
 cargo test --workspace

@@ -11,10 +11,14 @@ case $abi in
   *) echo "unknown ABI $abi" >&2; exit 2 ;;
 esac
 : "${ANDROID_NDK_HOME:?set ANDROID_NDK_HOME}"
+# Release drops wgpu's shader debug info, which SwiftShader refuses.
+profile=debug
+flags=()
+if [ "${ELY_RELEASE:-}" = 1 ]; then profile=release; flags=(--release); fi
 export RUST_FONTCONFIG_DLOPEN=on
 cd "$root"
-cargo ndk -t "$abi" -P 26 rustc -p ely-mark --lib --crate-type cdylib
-built=$root/target/$triple/debug
+cargo ndk -t "$abi" -P 26 rustc -p ely-mark --lib --crate-type cdylib "${flags[@]}"
+built=$root/target/$triple/$profile
 # gpui-mobile's own library kinds are never shipped.
 rm -f "$built"/deps/libgpui_mobile-*.a "$built"/deps/libgpui_mobile-*.so
 libs=$here/app/src/main/jniLibs/$abi
