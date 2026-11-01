@@ -316,6 +316,9 @@ impl Render for Root {
                 }
             }))
             .child(body);
+        // A long press that moves drags, as a mouse would.
+        #[cfg(any(target_os = "android", target_os = "ios"))]
+        let frame = frame.child(gpui_mobile::touch_drags());
         let frame = frame.child(raise(
             "toasts",
             ToastViewport::new("toast-viewport", &self.toaster),
