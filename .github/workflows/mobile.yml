@@ -1,0 +1,72 @@
+# Phones, on the mobile branch only: desktop checks, Android, iOS.
+name: mobile
+on:
+  push:
+    branches: [mobile]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+env:
+  CARGO_TERM_COLOR: never
+jobs:
+  desktop:
+    uses: ./.github/workflows/pr.yml
+
+  android:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Room for two debug targets
+        run: sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/.ghcup /opt/hostedtoolcache/CodeQL
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 17
+      - name: Rust targets and cargo-ndk
+        run: |
+          rustup target add aarch64-linux-android x86_64-linux-android
+          cargo install cargo-ndk --locked --version 4.1.2
+      - name: APK for phones (arm64) and the emulator (x86_64)
+        run: |
+          export ANDROID_NDK_HOME="$ANDROID_NDK_LATEST_HOME"
+          ELY_ABI=arm64-v8a mobile/android/build.sh
+          ELY_ABI=x86_64 mobile/android/build.sh
+      - uses: actions/upload-artifact@v7
+        with:
+          name: ElyMark-debug.apk
+          path: mobile/android/app/build/outputs/apk/debug/app-debug.apk
+          retention-days: 14
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - name: ElyMark on the emulator
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          arch: x86_64
+          target: google_apis
+          disable-animations: true
+          script: bash mobile/android/smoke.sh
+      - name: Screenshot and logs
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: android-smoke
+          path: smoke/
+          retention-days: 14
+
+  ios:
+    runs-on: macos-15
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: ElyMark's library compiles for iOS
+        run: |
+          rustup target add aarch64-apple-ios
+          cargo check -p ely-mark --lib --target aarch64-apple-ios

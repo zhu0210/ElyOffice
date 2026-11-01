@@ -1,9 +1,10 @@
 //! The app's side: spawn the worker, ask, read the answer.
 
 use std::{
-    io::{self, BufReader, BufWriter},
+    io::{self, BufReader, BufWriter, PipeReader, PipeWriter},
     path::{Path, PathBuf},
-    process::{Child, ChildStdin, ChildStdout, Command, Stdio},
+    process::{Child, Command, Stdio},
+    thread::JoinHandle,
 };
 
 use ely_ipc::{Pack, Unpack, check_reply, read_frame, write_frame};
@@ -11,16 +12,24 @@ use ely_ipc::{Pack, Unpack, check_reply, read_frame, write_frame};
 use crate::proto::{self, Bookmark, Char, tag};
 
 
-/// The PDF worker process.
+/// The PDF worker: a process, or a thread on phones (F5).
 pub struct Worker {
-    child: Child,
-    stdin: BufWriter<ChildStdin>,
-    stdout: BufReader<ChildStdout>,
+    engine: Engine,
+    stdin: BufWriter<Box<dyn io::Write + Send>>,
+    stdout: BufReader<Box<dyn io::Read + Send>>,
     /// The last request's id; each reply must carry it.
     asked: u64,
     /// This worker among all spawned; its documents carry it.
     session: u64,
 }
+
+enum Engine {
+    Process(Child),
+    Thread(JoinHandle<io::Result<()>>),
+}
+
+/// The worker's loop, as `ely_pdf_worker::serve`.
+pub type Serve = fn(PipeReader, PipeWriter) -> io::Result<()>;
 
 static SESSIONS: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(1);
 
@@ -111,21 +120,36 @@ impl Worker {
             .map_err(|error| io::Error::new(error.kind(), format!("pdf-worker spawn: {error}")))?;
         // Its records reach the app log; nothing reads them back.
         drop(ely_ipc::relay(child.stderr.take().expect("piped stderr"), "pdf-worker"));
-        let stdin = BufWriter::new(child.stdin.take().expect("piped stdin"));
-        let stdout = BufReader::new(child.stdout.take().expect("piped stdout"));
+        let stdin: Box<dyn io::Write + Send> = Box::new(child.stdin.take().expect("piped stdin"));
+        let stdout: Box<dyn io::Read + Send> = Box::new(child.stdout.take().expect("piped stdout"));
+        log::info!("pdf: worker from {}", bin.display());
+        Self::greet(Engine::Process(child), stdin, stdout, &bin.display().to_string())
+    }
+
+    /// Runs `serve` on a thread here, over the same frames.
+    pub fn in_process(serve: Serve) -> io::Result<Self> {
+        let (requests, asking) = io::pipe()?;
+        let (answers, answering) = io::pipe()?;
+        let thread = std::thread::Builder::new()
+            .name("ely-pdf-worker".into())
+            .spawn(move || serve(requests, answering))?;
+        log::info!("pdf: worker on a thread");
+        Self::greet(Engine::Thread(thread), Box::new(asking), Box::new(answers), "the in-process worker")
+    }
+
+    /// Checks the worker speaks this build's protocol.
+    fn greet(engine: Engine, stdin: Box<dyn io::Write + Send>, stdout: Box<dyn io::Read + Send>, from: &str) -> io::Result<Self> {
         let mut worker = Worker {
-            child,
-            stdin,
-            stdout,
+            engine,
+            stdin: BufWriter::new(stdin),
+            stdout: BufReader::new(stdout),
             asked: 0,
             session: SESSIONS.fetch_add(1, std::sync::atomic::Ordering::SeqCst),
         };
-        log::info!("pdf: worker from {}", bin.display());
         let reply = worker.request(tag::HELLO, &[])?;
         if Unpack::new(&reply).str()? != proto::BUILD {
             return Err(io::Error::other(format!(
-                "the pdf worker {} is from other sources; run cargo build -p ely-pdf-worker",
-                bin.display()
+                "the pdf worker {from} is from other sources; run cargo build -p ely-pdf-worker"
             )));
         }
         log::info!("pdf: worker up");
@@ -139,25 +163,34 @@ impl Worker {
         doc.at(&mark)
     }
 
-    /// Why the worker process ended, if it has.
+    /// Why the worker ended, if it has.
     pub fn ended(&mut self) -> Option<String> {
-        match self.child.try_wait() {
-            Ok(status) => status.map(|status| status.to_string()),
-            Err(error) => Some(error.to_string()),
+        match &mut self.engine {
+            Engine::Process(child) => match child.try_wait() {
+                Ok(status) => status.map(|status| status.to_string()),
+                Err(error) => Some(error.to_string()),
+            },
+            Engine::Thread(thread) => thread.is_finished().then(|| "the worker thread ended".to_string()),
         }
     }
 
-    /// The worker's process id, for resource tests.
+    /// The process serving, for resource tests.
     #[cfg(any(test, feature = "test-support"))]
     pub fn pid(&self) -> u32 {
-        self.child.id()
+        match &self.engine {
+            Engine::Process(child) => child.id(),
+            Engine::Thread(_) => std::process::id(),
+        }
     }
 
     /// Ends the worker process, for crash tests.
     #[cfg(any(test, feature = "test-support"))]
     pub fn kill(&mut self) -> io::Result<()> {
-        self.child.kill()?;
-        self.child.wait().map(|_| ())
+        let Engine::Process(child) = &mut self.engine else {
+            return Err(io::Error::new(io::ErrorKind::Unsupported, "a worker thread cannot be killed"));
+        };
+        child.kill()?;
+        child.wait().map(|_| ())
     }
 
     /// A request aimed at pages or objects `doc` saw.
@@ -189,9 +222,9 @@ impl Worker {
             Some((tag::OK, _, reply)) => Ok(reply),
             Some((tag::ERR, _, reply)) => Err(refusal(String::from_utf8_lossy(&reply).into_owned())),
             Some((other, _, _)) => Err(io::Error::other(format!("pdf-worker answered tag {other}"))),
-            None => Err(io::Error::other(match self.child.try_wait() {
-                Ok(Some(status)) => format!("the pdf worker exited: {status}"),
-                _ => "the pdf worker closed its pipe".to_string(),
+            None => Err(io::Error::other(match self.ended() {
+                Some(why) => format!("the pdf worker exited: {why}"),
+                None => "the pdf worker closed its pipe".to_string(),
             })),
         }
     }
@@ -276,11 +309,13 @@ impl Worker {
 
 impl Drop for Worker {
     fn drop(&mut self) {
+        // A thread ends when its requests pipe closes.
+        let Engine::Process(child) = &mut self.engine else { return };
         // The worker holds nothing that needs saving.
-        if let Err(error) = self.child.kill() {
+        if let Err(error) = child.kill() {
             log::info!("pdf: the worker was already gone: {error}");
         }
-        if let Err(error) = self.child.wait() {
+        if let Err(error) = child.wait() {
             log::warn!("pdf: the worker was not reaped: {error}");
         }
     }
@@ -313,3 +348,6 @@ fn refusal(text: String) -> io::Error {
         None => io::Error::other(text),
     }
 }
+
+#[cfg(test)]
+mod tests;

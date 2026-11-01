@@ -18,6 +18,8 @@ pub fn check(chain: &[Vec<u8>]) -> io::Result<Trust> {
     let checked = windows::check(chain, None);
     #[cfg(target_os = "linux")]
     let checked = linux::check(chain, None);
+    #[cfg(any(target_os = "android", target_os = "ios"))]
+    let checked = Err(io::Error::new(io::ErrorKind::Unsupported, format!("no trust check on phones yet ({} certificates)", chain.len())));
     checked
 }
 

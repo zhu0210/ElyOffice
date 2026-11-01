@@ -22,6 +22,8 @@ pub fn fail(app: AppId, reason: &str) -> ! {
     );
     let text = message(app, reason, &log);
     eprintln!("{text}");
+    // Phones have no dialog before a window.
+    #[cfg(not(any(target_os = "android", target_os = "ios")))]
     if std::env::var_os("ELY_NO_DIALOG").is_none() {
         rfd::MessageDialog::new()
             .set_level(rfd::MessageLevel::Error)

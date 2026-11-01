@@ -41,6 +41,12 @@ fn full_name() -> io::Result<String> {
     Ok(text.split(',').next().unwrap_or_default().to_string())
 }
 
+/// Phones have no account name.
+#[cfg(any(target_os = "android", target_os = "ios"))]
+fn full_name() -> io::Result<String> {
+    Ok(String::new())
+}
+
 #[cfg(windows)]
 fn full_name() -> io::Result<String> {
     use windows_sys::Win32::Security::Authentication::Identity::{GetUserNameExW, NameDisplay};

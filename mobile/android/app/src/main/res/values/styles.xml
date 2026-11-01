@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="ely_surface">#FF252525</color>
+
+    <style name="ElyTheme" parent="@android:style/Theme.NoTitleBar">
+        <item name="android:windowBackground">@color/ely_surface</item>
+        <item name="android:windowAnimationStyle">@null</item>
+        <item name="android:windowFullscreen">false</item>
+        <item name="android:statusBarColor">@color/ely_surface</item>
+        <item name="android:navigationBarColor">@color/ely_surface</item>
+    </style>
+
+    <style name="ElySplashTheme" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">@color/ely_surface</item>
+        <item name="windowSplashScreenAnimatedIcon">@mipmap/ic_launcher</item>
+        <item name="postSplashScreenTheme">@style/ElyTheme</item>
+    </style>
+</resources>

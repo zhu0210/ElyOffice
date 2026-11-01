@@ -284,11 +284,11 @@ crates/ely-pdf-engine/src/marks.rs	expect_used	geometry.as_object().expect("an o
 crates/ely-pdf-engine/src/marks.rs	expect_used	spec.as_object_mut().expect("an object")	linux,macos,windows	an object
 crates/ely-pdf-engine/src/proto.rs	expect_used	<[u8; 4]>::try_from(&at[n * 4..n * 4 + 4]).expect("four bytes")	linux,macos,windows	four bytes
 crates/ely-pdf-engine/src/proto.rs	expect_used	four.try_into().expect("four bytes")	linux,macos,windows	four bytes
-crates/ely-pdf-worker/src/main.rs	expect_used	self.docs.get_mut(&id).expect("just read")	linux,macos,windows	just read
+crates/ely-pdf-worker/src/lib.rs	expect_used	self.docs.get_mut(&id).expect("just read")	linux,macos,windows	just read
 crates/ely-pdf-worker/src/output.rs	expect_used	doc.repair.as_deref().expect("noted with the damage")	linux,macos,windows	noted with the damage
 crates/ely-pdf-worker/src/output.rs	expect_used	self.docs.get_mut(&id).expect("just read")	linux,macos,windows	just read
-crates/ely-platform/src/clipboard.rs	expect_used	BOARD.lock().expect("the clipboard lock")	linux,macos,windows	the clipboard lock
-crates/ely-platform/src/clipboard.rs	expect_used	board.as_mut().expect("opened above")	linux,macos,windows	opened above
+crates/ely-platform/src/clipboard/board.rs	expect_used	BOARD.lock().expect("the clipboard lock")	linux,macos,windows	the clipboard lock
+crates/ely-platform/src/clipboard/board.rs	expect_used	board.as_mut().expect("opened above")	linux,macos,windows	opened above
 crates/ely-platform/src/logging.rs	expect_used	LOG_PATH.set(path).expect("the logger was set once")	linux,macos,windows	the logger was set once
 crates/ely-platform/src/media/gst.rs	expect_used	CString::new(name).expect("no NUL")	linux	no NUL
 crates/ely-platform/src/media/gst.rs	expect_used	CString::new(name).expect("no NUL")	linux	no NUL

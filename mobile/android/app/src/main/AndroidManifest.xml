@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!-- configChanges lists every change: GPUI cannot move to a new Activity. -->
+<!-- stateNotNeeded lets Android restart it after a process restart. -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <uses-feature android:name="android.hardware.vulkan.level" android:required="false" android:version="0" />
+    <uses-feature android:glEsVersion="0x00030000" android:required="true" />
+
+    <application
+        android:allowBackup="false"
+        android:hardwareAccelerated="true"
+        android:icon="@mipmap/ic_launcher"
+        android:label="ElyMark"
+        android:supportsRtl="true"
+        android:theme="@style/ElyTheme"
+    >
+        <activity
+            android:name="dev.gpui.mobile.GpuiActivity"
+            android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|screenLayout|fontScale|uiMode|orientation|density|screenSize|smallestScreenSize|layoutDirection|colorMode|fontWeightAdjustment|grammaticalGender"
+            android:exported="true"
+            android:launchMode="singleTask"
+            android:stateNotNeeded="true"
+            android:theme="@style/ElySplashTheme"
+            android:windowSoftInputMode="adjustResize"
+        >
+            <meta-data android:name="android.app.lib_name" android:value="${nativeLibraryName}" />
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+        <activity
+            android:name="dev.gpui.mobile.GpuiPathPicker"
+            android:exported="false"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar"
+        />
+    </application>
+
+</manifest>

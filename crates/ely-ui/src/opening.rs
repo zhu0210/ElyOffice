@@ -135,8 +135,8 @@ pub(crate) fn keep(handed: Handed, cx: &mut App) -> Hands {
     handed.hands
 }
 
-/// No files asked at launch, for tests.
-#[cfg(any(test, feature = "test-support"))]
+/// No files asked at launch: tests and phones.
+#[cfg(any(test, feature = "test-support", target_os = "android", target_os = "ios"))]
 pub fn install_no_launch_files(cx: &mut App) {
     cx.set_global(Asked(Some(mpsc::unbounded().1)));
 }

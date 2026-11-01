@@ -31,13 +31,13 @@ pub fn region_of(tag: &str) -> Option<String> {
     alpha(part, 2..=2).then(|| part.to_ascii_uppercase())
 }
 
-#[cfg(target_os = "macos")]
+#[cfg(any(target_os = "macos", target_os = "ios"))]
 fn regional() -> Option<String> {
     use objc2_foundation::NSLocale;
     NSLocale::currentLocale().regionCode().map(|code| code.to_string().to_ascii_uppercase())
 }
 
-#[cfg(target_os = "windows")]
+#[cfg(any(target_os = "windows", target_os = "android"))]
 fn regional() -> Option<String> {
     region_of(&platform())
 }
@@ -47,7 +47,7 @@ fn regional() -> Option<String> {
     region_of(&resolve_env(["LC_ALL", "LC_PAPER", "LANG"], env::value))
 }
 
-#[cfg(target_os = "macos")]
+#[cfg(any(target_os = "macos", target_os = "ios"))]
 fn platform() -> String {
     use objc2_foundation::NSLocale;
     if let Some(tag) = NSLocale::preferredLanguages()
@@ -78,6 +78,21 @@ fn platform() -> String {
         return "en".into();
     }
     String::from_utf16_lossy(&buffer[..length as usize - 1])
+}
+
+/// The activity's configuration, as `zh-CN`.
+#[cfg(target_os = "android")]
+fn platform() -> String {
+    let Some(app) = gpui_mobile::android::jni::android_app() else {
+        log::warn!("locale: no activity yet");
+        return "en".into();
+    };
+    let config = app.config();
+    match (config.language(), config.country()) {
+        (Some(language), Some(country)) => format!("{language}-{country}"),
+        (Some(language), None) => language,
+        _ => "en".into(),
+    }
 }
 
 /// First non-empty variable wins; C/POSIX ends as en.

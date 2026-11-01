@@ -13,7 +13,7 @@
 | 界面 | Rust + GPUI + Ely-GPUI-Components |
 | Doc / Table / Show | LibreOfficeKit，独立工作进程 |
 | Show 媒体 | 各平台原生：macOS AVFoundation，Windows Media Foundation，Linux GStreamer（LOK 不放媒体） |
-| PDF | MuPDF（C 接口），Tesseract OCR，独立工作进程 |
+| PDF | MuPDF（C 接口），Tesseract OCR，独立工作进程；手机上同一循环跑在应用进程的线程里（`Worker::in_process`） |
 | Mail | mail-send、mail-parser、mail-builder，IMAP（imap-proto 解析）与 POP3 由引擎自写（`crates/ely-mail-engine`，应用进程内的后台任务，无 worker）+ SQLite（FTS5）；网络随系统代理（HTTP CONNECT、SOCKS5）；正文以 html5ever 解析、净化后按块的子集由 GPUI 绘制；写信用 `documents::MarkdownDocument`，发出纯文本与 HTML；Microsoft 走 OAuth，Gmail 与 iCloud 走应用专用密码 |
 | Tree | Git CLI，参数数组启动 |
 | Mark | 组件库 `documents::MarkdownDocument`（GPUI，原文即文本，无序列化）；组件库的 Markdown 树（`documents::mdast`，pulldown-cmark 建）解析与导出 HTML，RaTeX 公式，mermaid-rs-renderer 图；PDF 经 `ely-pdf-worker` 由 MuPDF 排版 |
@@ -35,6 +35,7 @@ docs/        兼容清单、无障碍、帮助、许可、性能记录、功能�
 scripts/     fetch-references.sh 取上游  doctor.sh 查工具  review.sh 开终端审查  build-*.sh 构建引擎
 tests/       scripts 与 engines 下是脚本测试；engines 缺二进制时报 SKIP；fixtures 是测试共用的样本（media/clip.mp4：1 秒 H.264/AAC；pdf/aes128.pdf：AES-128 加密，打开密码 user、所有者密码 owner；pdf/signer.p12 与 signer.der：自签名测试证书，密码 ely；pdf/chain-root.der 与 chain-leaf.der：测试用的根与其签发的证书；show/sections.pptx：t.pptx 加两个章节（p14:sectionLst），sections-utf16.pptx 同而 presentation.xml 为 UTF-16LE，sections-locked.pptx 为其加密版，打开密码 ely，sections-locked-tail.pptx 同而目录移到文件末尾、`EncryptedPackage` 在最后一格；tree/launcher-fails、launcher-held、launcher-pwd、launcher-session：ElyTree 终端启动器测试用的可执行脚本（Git 里 100755）；git/git-2.39、git-2.40：只报版本的假 Git（版本下限测试），git-fails：报出版本后以 7 失败的假 Git；pdf/stale-worker、crossed-worker：答错盖章与错号的假 PDF worker（皆 Git 里 100755：测试里现写现跑的程序会撞上别的测试 fork 出的子进程而报 ETXTBSY）；table/kept.xlsx：照 Excel 写法的 XLSX，含 Calc 不认的函数（`CUBEVALUE`、`_xlfn.TRANSLATE`，一组共享公式）与其缓存值，kept-more.xlsx 含布尔、空串、缺值、坏数、数组（含各类成员）与易变函数，kept-more.ods 含属性顺序不同的空串、空串与坏数的矩阵成员，kept-strings.xlsx 含内联与共享字符串的数组成员、坏索引与用未知函数的定义名称，spill.xlsx 含 Excel 的动态数组（`cm` 指向 `xl/metadata.xml` 的 XLDAPR，其一此刻只占一格）、普通数组与块非动态的数组，spill-broken.xlsx 同而 metadata.xml 读不出，spill-empty.xlsx 同而 metadata.xml 为零字节，booleans.xlsx 含公式里裸的 `TRUE`、`FALSE`，皆由同目录 make-kept.py 生成；r-macro-demo.fods：R 宏的样本（首尾带空格的文字、前导零的文字、数字、逻辑值、空格与公式），rscript-fails、rscript-held、rscript-invalid：以 7 失败、一直不退、写出越界指令的假 Rscript（Git 里 100755，理由同 git-fails）；pivot.xlsx：照 Excel 写法的紧凑透视表，无标题属性（Excel 显示 Row Labels、Column Labels、Grand Total），pivot-named.xlsx 同而三个标题属性为中文，pivot-blank.xlsx 行、列标题为空串，pivot-columns.xlsx 只有列字段、标题为中文，pivot-values.xlsx 同而两个值字段按行排（行区只有数据布局字段），pivot-empty.xlsx 只有列字段而无值字段、旁边 H4 有用户的值，pivot-name-formula.xlsx、pivot-name-quote.xlsx、pivot-name-number.xlsx 同 pivot-columns.xlsx 而值字段名为 `=1+1`、`'Revenue`、`123`（照 Excel 存的文件），皆由同目录 make-pivot.py 生成；links.xlsx：两张表的超链接，一个 `location` 自带 `#`（第三方导出工具的写法）、一个不带、一个外部网址，由同目录 make-links.py 生成；office/backslash.docx、backslash.xlsx：腾讯文档式的反斜杠目录条目，broken.docx：名字含问号的坏包，malformed.docx：正文 XML 截断一半（内核在导入中问是否修复），equation.docx：公式里数学连字符（Word 显示为减号）与一段普通文字的连字符，toc.docx：内容控件里有标题的目录、域结束独占末段，toc-tail.docx 与 toc-tail-untitled.docx：有、无标题的目录，域结束后同段还有正文，toc-tail-entry.docx 与 toc-tail-entry-untitled.docx 同而域结束在末条目录里、其后同段是正文，toc-shape.docx 与 toc-shape-untitled.docx 同而其后同段只有浮动文本框，toc-inline.docx：目录条目在行内内容控件里，redline.docx：书签、指向它的 PAGEREF 与一处插入一处删除（打开后不得算已修改），皆由同目录 make-packages.py 生成；show/video.pptx：1 秒的 clip.mp4、其淡入与点击即播放暂停的触发序列（PowerPoint 的写法），由同目录 make-media.py 生成；epub/sample.epub：两章、目录、中文与一张缺失的图片（MuPDF 排版时警告），由同目录 make-sample.py 生成；mail/sample.eml：带编码主题、分组抄送、纯文本加 HTML、cid 图片与附件的邮件，LF 行尾，测试换成 CRLF）
 tasks/       TASKS.md 进度真相
+mobile/      手机外壳（只在 mobile 分支）：android 是 Gradle 工程，启动活动为 gpui-mobile 的 GpuiActivity，Java 源取 Cargo 所用的 gpui-mobile 检出
 site/        官网（Vite 8、pnpm、TypeScript，无框架；`/docs` 命令行页、`/changelog` 更新日志由 `changelog/<版本>.md` 每版一个在构建时写成，两页随网站语言只显示一种（`public/lang.js`，首页链接带 `?lang=`）；等轴 SVG 积木；中英两种文案在 src/text.ts）；site/video 是发布视频的分镜、配乐、录屏与合成脚本，产物在 site/video/out（不入库）
 ```
 
@@ -233,6 +234,8 @@ scripts/deny.sh [根] [检查...]  cargo-deny：安全公告、yanked、许可�
 tests/scripts/deny-rules.sh    deny.sh：列着的重复组过、多余或无着落的 skip 败、去掉的旧版回来败（临时 crate）
 scripts/panics.py [根]          非测试代码的 expect、unwrap、panic!、unreachable!（clippy 量，构建脚本与 ely-mail-fake 除外）与 scripts/panics.tsv 逐条相符、各带理由，任一种类不多于 HEAD 的表；`--sites` 列出本机各处
 tests/scripts/panics-rules.sh  panics.py：列着的过、测试模块与 build.rs 不算、新处、增多、消失、无理由皆败（临时 crate）
+ELY_ABI=arm64-v8a mobile/android/build.sh  ElyMark 的调试 APK（cargo-ndk，ANDROID_NDK_HOME 指 NDK；库去调试信息后打包）；x86_64 给模拟器
+mobile/android/smoke.sh        模拟器上装、启动 ElyMark，截图与 logcat 存到 smoke/，窗口未开即失败（mobile.yml 调用）
 cargo check --workspace
 cargo test --workspace
 ELY_GIT=路径 cargo test -p ely-tree  ElyTree 测试用该 Git（系统 Git 须 2.40 起）；不设即用 engines/git 的随包 Git，都没有即失败
