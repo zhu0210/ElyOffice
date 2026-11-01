@@ -54,7 +54,6 @@ impl Ask {
 type Answer = dyn Fn(Ask, &mut App);
 
 /// The app's answers to other programs; none refuses them.
-// Phones take no requests from other programs.
 #[cfg_attr(any(target_os = "android", target_os = "ios"), allow(dead_code))]
 struct Answers(std::rc::Rc<Answer>);
 impl Global for Answers {}
