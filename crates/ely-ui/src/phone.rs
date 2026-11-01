@@ -24,6 +24,13 @@ pub fn run_android<V: Render>(
         .run(move |cx| open(app, root, cx));
 }
 
+/// Starts `app` from the iOS host's app delegate.
+#[cfg(target_os = "ios")]
+pub fn run_ios<V: Render>(app: AppId, root: impl FnOnce(AppId, &mut Window, &mut App) -> Entity<V> + 'static) {
+    gpui_mobile::ios::ffi::set_app_callback(Box::new(move |cx| open(app, root, cx)));
+    gpui_mobile::ios::ffi::run_app_with_assets(ely_gpui_component::Assets);
+}
+
 fn open<V: Render>(app: AppId, root: impl FnOnce(AppId, &mut Window, &mut App) -> Entity<V> + 'static, cx: &mut App) {
     crate::opening::install_no_launch_files(cx);
     crate::run::prepare(app, cx);
