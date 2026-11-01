@@ -3,7 +3,7 @@
 use std::{io, path::Path};
 
 /// Renames `from` to `to`; an existing `to` fails, atomically.
-#[cfg(target_os = "macos")]
+#[cfg(any(target_os = "macos", target_os = "ios"))]
 pub fn rename_new(from: &Path, to: &Path) -> io::Result<()> {
     let (from, to) = (c_path(from)?, c_path(to)?);
     // SAFETY: both are NUL-terminated paths that outlive the call.
@@ -21,6 +21,28 @@ pub fn rename_new(from: &Path, to: &Path) -> io::Result<()> {
     // SAFETY: both are NUL-terminated paths that outlive the call.
     let done = unsafe {
         libc::renameat2(
+            libc::AT_FDCWD,
+            from.as_ptr(),
+            libc::AT_FDCWD,
+            to.as_ptr(),
+            libc::RENAME_NOREPLACE,
+        )
+    };
+    if done == 0 {
+        Ok(())
+    } else {
+        Err(io::Error::last_os_error())
+    }
+}
+
+/// Bionic wraps renameat2 from API 30; the syscall is older.
+#[cfg(target_os = "android")]
+pub fn rename_new(from: &Path, to: &Path) -> io::Result<()> {
+    let (from, to) = (c_path(from)?, c_path(to)?);
+    // SAFETY: both are NUL-terminated paths that outlive the call.
+    let done = unsafe {
+        libc::syscall(
+            libc::SYS_renameat2,
             libc::AT_FDCWD,
             from.as_ptr(),
             libc::AT_FDCWD,
@@ -56,7 +78,7 @@ pub fn rename_new(from: &Path, to: &Path) -> io::Result<()> {
     }
 }
 
-#[cfg(not(any(target_os = "macos", target_os = "linux", windows)))]
+#[cfg(not(any(target_os = "macos", target_os = "ios", target_os = "linux", target_os = "android", windows)))]
 pub fn rename_new(_: &Path, _: &Path) -> io::Result<()> {
     Err(io::Error::new(
         io::ErrorKind::Unsupported,

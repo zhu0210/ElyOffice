@@ -12,7 +12,7 @@ use ely_ipc::{Pack, Unpack, check_reply, read_frame, write_frame};
 use crate::proto::{self, Bookmark, Char, tag};
 
 
-/// The PDF worker: a process, or a thread on phones (F5).
+/// The PDF worker: a process, or a thread (F5).
 pub struct Worker {
     engine: Engine,
     stdin: BufWriter<Box<dyn io::Write + Send>>,

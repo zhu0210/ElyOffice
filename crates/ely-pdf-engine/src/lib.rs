@@ -1,4 +1,4 @@
-//! MuPDF in its own process or thread: protocol and client (PDF-01).
+//! MuPDF behind frames: protocol and client (PDF-01).
 
 mod client;
 mod content;
