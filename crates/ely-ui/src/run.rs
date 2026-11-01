@@ -1,8 +1,11 @@
 use std::time::Duration;
 
+#[cfg(not(any(target_os = "android", target_os = "ios")))]
 use ely_gpui_component::Assets;
 use ely_gpui_component::theme::ActiveTheme;
-use ely_platform::{AppId, env, graphics, instance::Start, logging, startup};
+use ely_platform::{AppId, startup};
+#[cfg(not(any(target_os = "android", target_os = "ios")))]
+use ely_platform::{env, graphics, instance::Start, logging};
 use gpui::{
     AnyWindowHandle, App, Bounds, Entity, Render, TitlebarOptions, Window, WindowBounds, WindowDecorations,
     WindowOptions, px, size,
@@ -10,6 +13,7 @@ use gpui::{
 
 use crate::theme;
 
+#[cfg(not(any(target_os = "android", target_os = "ios")))]
 /// Starts `app`; `ELY_SMOKE=1` draws a frame, `hold` stays up.
 pub fn run<V: Render>(
     app: AppId,
@@ -61,6 +65,7 @@ pub(crate) enum Smoke {
 }
 
 impl Smoke {
+    #[cfg(not(any(target_os = "android", target_os = "ios")))]
     fn from_env() -> Self {
         Self::from_value(env::value("ELY_SMOKE").as_deref())
     }
@@ -78,6 +83,7 @@ impl Smoke {
     }
 }
 
+#[cfg(not(any(target_os = "android", target_os = "ios")))]
 fn open<V: Render>(
     app: AppId,
     smoke: Smoke,
@@ -85,23 +91,9 @@ fn open<V: Render>(
     hands: crate::opening::Hands,
     cx: &mut App,
 ) {
-    // Names the app's system notifications.
-    cx.set_app_identity(&format!("ElyOffice.{}", app.name()), app.name());
-    if let Err(error) = ely_gpui_component::init(cx) {
-        startup::fail(app, &format!("the components did not start: {error:#}"));
-    }
-    crate::settings::install(app, cx);
-    // Clears asked for last time; nothing opens what stays.
-    if let Err(error) = ely_platform::storage::clear_marked(app) {
-        startup::fail(app, &format!("the data you asked to clear could not be deleted, so it is not opened; the next start tries again: {error}"));
-    }
-    theme::install(cx);
-    crate::i18n::install(cx);
+    prepare(app, cx);
     crate::updates::install(app, cx);
     cx.on_action(|_: &crate::commands::CheckForUpdates, cx| crate::updates::check_now(cx));
-    crate::commands::bind_keys(cx);
-    crate::commands::bind_quit(cx);
-    cx.on_action(move |_: &crate::commands::OpenSettings, cx| crate::settings::open(app, cx));
     let main = match main_window(app, smoke, root, cx) {
         Ok(window) => window,
         Err(error) => startup::fail(app, &format!("the window did not open: {error:#}")),
@@ -127,6 +119,25 @@ fn open<V: Render>(
         crate::frames::watch(cx);
     }
     log::info!("{} window open", app.name());
+}
+
+/// What every start sets up before the main window.
+pub(crate) fn prepare(app: AppId, cx: &mut App) {
+    // Names the app's system notifications.
+    cx.set_app_identity(&format!("ElyOffice.{}", app.name()), app.name());
+    if let Err(error) = ely_gpui_component::init(cx) {
+        startup::fail(app, &format!("the components did not start: {error:#}"));
+    }
+    crate::settings::install(app, cx);
+    // Clears asked for last time; nothing opens what stays.
+    if let Err(error) = ely_platform::storage::clear_marked(app) {
+        startup::fail(app, &format!("the data you asked to clear could not be deleted, so it is not opened; the next start tries again: {error}"));
+    }
+    theme::install(cx);
+    crate::i18n::install(cx);
+    crate::commands::bind_keys(cx);
+    crate::commands::bind_quit(cx);
+    cx.on_action(move |_: &crate::commands::OpenSettings, cx| crate::settings::open(app, cx));
 }
 
 /// Opens the main window where it last was.
@@ -159,6 +170,7 @@ pub(crate) fn main_window<V: Render>(
     Ok(opened.into())
 }
 
+#[cfg(not(any(target_os = "android", target_os = "ios")))]
 /// Logs each main-thread stretch busy past 100 ms.
 fn watch_stalls(cx: &mut App) {
     const BEAT: Duration = Duration::from_millis(20);

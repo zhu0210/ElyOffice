@@ -9,7 +9,6 @@ publish.workspace = true
 [dependencies]
 anyhow.workspace = true
 base64.workspace = true
-arboard.workspace = true
 directories.workspace = true
 dunce.workspace = true
 ely-ipc.workspace = true
@@ -38,6 +37,12 @@ objc2-pdf-kit.workspace = true
 objc2.workspace = true
 security-framework.workspace = true
 
+[target.'cfg(target_os = "ios")'.dependencies]
+objc2-foundation.workspace = true
+
+[target.'cfg(target_os = "android")'.dependencies]
+gpui_mobile.workspace = true
+
 [target.'cfg(windows)'.dependencies]
 clipboard-win = "5.4"
 windows-sys.workspace = true
@@ -56,8 +61,11 @@ x509-parser.workspace = true
 zbus.workspace = true
 rfd = { workspace = true, features = ["xdg-portal"] }
 
-[target.'cfg(not(target_os = "linux"))'.dependencies]
+[target.'cfg(not(any(target_os = "linux", target_os = "android", target_os = "ios")))'.dependencies]
 rfd.workspace = true
+
+[target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
+arboard.workspace = true
 
 [dev-dependencies]
 lopdf.workspace = true

@@ -466,3 +466,13 @@
 - [~] R14.53 macOS 无障碍复核（I-02）：七个应用含 ElyMail，`macos-names.sh` 经 AX 核对名字、Tab 次序与 F6。已做：七个皆过；修 vendor gpui-pre-macos：AccessKit 改挂在第一响应者 gpui 视图上（原先焦点永远报成窗口），去掉即七个皆败。R1 FAIL 两项已修：F6 改为到页面即按、须出页面子树；AX 查询失败即败。加严后查出 ElyMark 的 F6 只在块间走，修在组件库 63543a0（F6 出文档），pin 随之；`linux-names.sh` 同样加严。R2 FAIL 一项已修：F6 的落点当作下一个停靠点核名字；`windows-names.sh` 同样到页面即按 F6，Windows 七个皆过、F6 换 F7 即五个败。R3 FAIL 一项已修（三轮用尽）：Windows 走查 F6 后焦点为空即败，以走查原循环加替身重演，修前过、修后败
 - [x] R14.54 发布 0.1.13（用户 2026-10-30 定）：版本号；补丁 0059 至 0062 已在三台机器的共享引擎里重建；推标签，三端构建、过发布的门、上传，核对发布文件；Nix 的 release.json；发布说明（中英）；关闭已修好的 issue（#50；#45 报告者自行解决）。第一次构建停在发布的门：两个测试依赖主机（Windows 的 S4U 令牌下 icacls 拒绝不生效、Linux 子进程继承 WSLg 的 Wayland），改为与主机无关后移标签重跑；第二次 Windows 又停：runner 克隆里的旧 CRLF（检出后改为按库重写）、无桌面时没有托盘（测试先找通知区）；Linux 先传完即把发布建成了正式的“最新”，当即改回预发布，ci.sh 改为先建预发布；第三次 macOS 的 ElyMark 计时测试在高负载下偶败，改为五次取最快，移标签四端重跑（GitHub 在整次运行结束前不许单独重跑任务）；第四次 Windows 停在 ely-files 钥匙测试的线程先后（改为等 a 持锁再起 b），移标签重跑；第五次 Windows 停在 ElyDoc 拼写菜单测试（右击早于空闲拼写检查，改为再右击直到词被标）；发布的 deb、rpm 在 Ubuntu、Fedora 容器里 14 项皆过（读字改 psm 11）；Omarchy 已装 0.1.13，无图形会话未测。第六次（41152090135，38d4cc3）四端皆过：124 个文件，比 0.1.12 多 35 份更新清单签名，35 份皆以 `ely_platform::update::KEY` 验过（改一字节即败），清单的散列与 GitHub 所存文件一一相符；加中英发布说明，改为正式并设为最新，`releases/latest/download` 即给出 0.1.13 的清单；nix/release.json 指向 0.1.13，tests/scripts/nix.sh 过；#50、#45 回复致谢后关闭
 - [x] R14.49 验收核对表：五十项、三个命令行与跨段选取逐条核对。已做：`docs/acceptance.md`（由 TASKS 与审查记录生成五十行；三个命令行在 Windows 重跑皆过；跨段选取在组件库 pin 9d922a3 上 49 个测试皆过；未完成的六项写明缘由）；审查全部结束后据末轮结论重生成再送审。2026-10-30 据各任务末轮结论重生成，加 GitHub issue #49、#50 一节；R14.48f 修好移出未完成。第 1 轮：B-01、F-01、I-01、I-02 未完成的子项写进行内与未完成表，G-02 写明 K-02 只按代码核 — R2 PASS。2026-10-30 重写：I-02 由 R14.53 复核 macOS 七个应用；R14.48 按用户定视同已修，移出“未完成”；#49 根因暂缓；重写后 R3 PASS
+
+## M2 手机：平台审查与外壳（用户 2026-11-01 定：GPUI 上手机，先 ElyMark；在 `mobile` 分支，不进 main，不送上游）
+
+- [ ] M2.1 审查 `ely-platform` 与 `ely-ui` 逐模块的去留（照旧、手机上停用、替换），记在 `docs/decisions.md` 2026-11-01（M2）。已做：审查与记录；Android 上编译通过所需的改动（数据目录、语言、剪贴板、打印、信任、账户名、原子替换、LOK 的符号性）。待审查
+- [ ] M2.2 引擎在应用进程内（F5）：`ely_pdf_worker::serve` 与 `Worker::in_process`，同一帧协议。已做：拆库、线程版客户端、假循环单测。待审查
+- [ ] M2.3 手机启动：`ely_ui::run_android`，ElyMark 拆成库，`mobile/android` 的 Gradle 外壳与 `build.sh`。已做：Galaxy S25+ 上启动并画出首屏（截图看过）。待审查
+- [ ] M2.4 CI：`.github/workflows/mobile.yml` 只在 `mobile` 分支，Android 构建 APK、iOS 构建，桌面检查
+- [ ] M2.5 iOS 入口：gpui-mobile 的 `run_app` 接不上 `Assets`，须先给 gpui-mobile 加带资源的入口，再写 `ely_ui` 的 iOS 入口与 Xcode 工程
+- [ ] M2.6 手机上停用的桌面模块不再编进去：`opening` 的实例门、`updates`、`tray` 在 Android 上有未用告警（`ely-ui` 18 条）；`ely-office` 的 LOK 部分可选，ElyMark 不带 `ely-lok`
+- [ ] M2.7 交给 M3：PDF 导出（MuPDF 交叉构建并链入，worker 临时文件改到缓存目录）；去掉自绘标题栏、按安全区留边；设置与新窗口改为窗口内的页；菜单改为工具栏；富剪贴板；分享打印；减少动效；日志文件；emoji 字体资源

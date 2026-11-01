@@ -6,6 +6,11 @@ rust-version.workspace = true
 license.workspace = true
 publish.workspace = true
 
+# The library is MuPDF calls; only the binary links MuPDF.
+[lib]
+test = false
+doctest = false
+
 [dependencies]
 ely-ipc.workspace = true
 ely-pdf-engine.workspace = true

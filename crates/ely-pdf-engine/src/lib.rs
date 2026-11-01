@@ -1,4 +1,4 @@
-//! MuPDF in its own process: protocol and client (PDF-01).
+//! MuPDF in its own process or thread: protocol and client (PDF-01).
 
 mod client;
 mod content;
@@ -14,7 +14,7 @@ pub mod proto;
 #[cfg(any(test, feature = "test-support"))]
 pub mod sample;
 
-pub use client::{Doc, Opened, Refused, Tile, Worker, is_stale, refused};
+pub use client::{Doc, Opened, Refused, Serve, Tile, Worker, is_stale, refused};
 pub use content::{Drawn, TextBlock, Writing, Wrote};
 pub use ocr::{OcrLine, tessdata};
 pub use output::Optimizing;

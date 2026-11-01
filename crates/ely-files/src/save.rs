@@ -374,18 +374,16 @@ fn statfs(dir: &Path) -> io::Result<libc::statfs> {
     Ok(stats)
 }
 
-#[cfg(target_os = "macos")]
+#[cfg(any(target_os = "macos", target_os = "ios"))]
 fn capable(dir: &Path) -> io::Result<bool> {
     const MNT_LOCAL: i32 = 0x0000_1000;
     Ok(statfs(dir)?.f_flags as i32 & MNT_LOCAL != 0)
 }
 
-#[cfg(target_os = "linux")]
+#[cfg(any(target_os = "linux", target_os = "android"))]
 fn capable(dir: &Path) -> io::Result<bool> {
-    const NFS: i64 = 0x6969;
-    const SMB: i64 = 0x517B;
-    const CIFS: i64 = 0xFF534D42;
-    Ok(!matches!(statfs(dir)?.f_type, NFS | SMB | CIFS))
+    // NFS, SMB, CIFS; the field's width varies.
+    Ok(![0x6969, 0x517B, 0xFF53_4D42].contains(&statfs(dir)?.f_type))
 }
 
 #[cfg(windows)]

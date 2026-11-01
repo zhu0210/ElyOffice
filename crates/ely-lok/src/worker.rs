@@ -21,9 +21,9 @@ mod text;
 mod messages;
 #[cfg(windows)]
 use messages::serve;
-#[cfg(target_os = "linux")]
+#[cfg(any(target_os = "linux", target_os = "android", target_os = "ios"))]
 mod unipoll;
-#[cfg(target_os = "linux")]
+#[cfg(any(target_os = "linux", target_os = "android", target_os = "ios"))]
 use unipoll::serve;
 
 /// English kernel, desktop hints; macros stay off (LOK-11).

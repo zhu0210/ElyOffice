@@ -20,8 +20,20 @@ pub(crate) fn home() -> Result<PathBuf> {
     if let Some(root) = chosen_root(crate::env::value("ELY_DATA_ROOT"))? {
         return Ok(root);
     }
+    local()
+}
+
+#[cfg(not(target_os = "android"))]
+fn local() -> Result<PathBuf> {
     let base = BaseDirs::new().context("no home directory")?;
     Ok(base.data_local_dir().join("ElyOffice"))
+}
+
+/// The app's own files folder; Android sets no home.
+#[cfg(target_os = "android")]
+fn local() -> Result<PathBuf> {
+    let app = gpui_mobile::android::jni::android_app().context("no activity yet")?;
+    Ok(app.internal_data_path().context("the activity has no files folder")?.join("ElyOffice"))
 }
 
 /// Benchmarks only: a seeded folder, never the user's.

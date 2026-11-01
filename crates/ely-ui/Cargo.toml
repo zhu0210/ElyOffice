@@ -14,10 +14,20 @@ gpui.workspace = true
 directories.workspace = true
 futures.workspace = true
 semver.workspace = true
-gpui_platform.workspace = true
 log.workspace = true
 notify.workspace = true
 serde_json.workspace = true
+
+[target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
+ely-gpui-component = { workspace = true, features = ["runtime_shaders"] }
+gpui_platform.workspace = true
+
+[target.'cfg(any(target_os = "android", target_os = "ios"))'.dependencies]
+gpui_mobile.workspace = true
+
+[target.'cfg(target_os = "android")'.dependencies]
+android-activity = { version = "0.6", features = ["native-activity"] }
+android_logger = "0.15"
 
 [target.'cfg(target_os = "windows")'.dependencies]
 gpui_windows = { package = "gpui-pre-windows", version = "=0.3.10" }

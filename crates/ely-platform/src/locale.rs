@@ -8,7 +8,7 @@ pub fn system() -> String {
     platform()
 }
 
-#[cfg(target_os = "macos")]
+#[cfg(any(target_os = "macos", target_os = "ios"))]
 fn platform() -> String {
     use objc2_foundation::NSLocale;
     if let Some(tag) = NSLocale::preferredLanguages()
@@ -39,6 +39,21 @@ fn platform() -> String {
         return "en".into();
     }
     String::from_utf16_lossy(&buffer[..length as usize - 1])
+}
+
+/// The activity's configuration, as `zh-CN`.
+#[cfg(target_os = "android")]
+fn platform() -> String {
+    let Some(app) = gpui_mobile::android::jni::android_app() else {
+        log::warn!("locale: no activity yet");
+        return "en".into();
+    };
+    let config = app.config();
+    match (config.language(), config.country()) {
+        (Some(language), Some(country)) => format!("{language}-{country}"),
+        (Some(language), None) => language,
+        _ => "en".into(),
+    }
 }
 
 /// First non-empty variable wins; C/POSIX ends as en.

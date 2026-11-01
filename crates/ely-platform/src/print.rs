@@ -13,13 +13,23 @@ pub use linux::print_pdf;
 pub use mac::print_pdf;
 #[cfg(windows)]
 pub use win::print_pdf;
+#[cfg(any(target_os = "android", target_os = "ios"))]
+pub use phone::print_pdf;
+
+/// Phones print through the share sheet later (M3).
+#[cfg(any(target_os = "android", target_os = "ios"))]
+mod phone {
+    pub async fn print_pdf(pdf: &std::path::Path, _: crate::settings::Sides) -> anyhow::Result<bool> {
+        anyhow::bail!("printing {} is not on phones yet", pdf.display())
+    }
+}
 
 /// Paper sizes round to whole points at worst.
-#[cfg(not(target_os = "macos"))]
+#[cfg(not(any(target_os = "macos", target_os = "android", target_os = "ios")))]
 const ROUNDING: f64 = 0.5;
 
 /// Whether a named paper, short side first, holds a page.
-#[cfg(not(target_os = "macos"))]
+#[cfg(not(any(target_os = "macos", target_os = "android", target_os = "ios")))]
 fn holds((across, down): (f64, f64), (short, long): (f64, f64)) -> bool {
     // A named paper may run 2 mm over, never under.
     let suits = |paper: f64, page: f64| paper >= page - ROUNDING && paper - page <= 2.0 * 72.0 / 25.4;
@@ -27,6 +37,7 @@ fn holds((across, down): (f64, f64), (short, long): (f64, f64)) -> bool {
 }
 
 /// One paper holding every page, turned as needed.
+#[cfg(not(any(target_os = "android", target_os = "ios")))]
 fn paper_for(sizes: &[(f64, f64)]) -> Option<(f64, f64)> {
     let long = sizes.iter().map(|(w, h)| w.max(*h)).fold(None, |most: Option<f64>, side| Some(most.map_or(side, |m| m.max(side))))?;
     let short = sizes.iter().map(|(w, h)| w.min(*h)).fold(0.0, f64::max);
@@ -41,7 +52,7 @@ fn paper_for(sizes: &[(f64, f64)]) -> Option<(f64, f64)> {
 }
 
 /// Runs `work` on its own thread, off the app's.
-#[cfg(not(target_os = "macos"))]
+#[cfg(not(any(target_os = "macos", target_os = "android", target_os = "ios")))]
 async fn off<T: Send + 'static>(work: impl FnOnce() -> anyhow::Result<T> + Send + 'static) -> anyhow::Result<T> {
     let (sender, answer) = futures::channel::oneshot::channel();
     std::thread::Builder::new().name("ely-print".into()).spawn(move || {
