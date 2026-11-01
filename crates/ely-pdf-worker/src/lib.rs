@@ -456,7 +456,7 @@ impl Worker {
     }
 }
 
-/// Answers framed requests until `input` ends: a process or a thread.
+/// Answers framed requests until `input` ends.
 pub fn serve(input: impl io::Read, output: impl io::Write) -> io::Result<()> {
     ffi::script_font();
     // Numbers from another worker process match nothing here.
