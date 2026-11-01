@@ -540,10 +540,12 @@
 - [ ] R15.24 验收核对表：R15 逐条核对
 ## M2 手机：平台审查与外壳（用户 2026-11-01 定：GPUI 上手机，先 ElyMark；在 `mobile` 分支，不进 main，不送上游）
 
+- 2026-11-01 用户改定先后：先做视频轨，再迁 Cirrus；M3 暂停，M2 停在已推送的状态。
+
 - [ ] M2.1 审查 `ely-platform` 与 `ely-ui` 逐模块的去留（照旧、手机上停用、替换），记在 `docs/decisions.md` 2026-11-01（M2）。已做：审查与记录；Android 上编译通过所需的改动（数据目录、语言、剪贴板、打印、信任、账户名、原子替换、LOK 的符号性）。待审查
 - [ ] M2.2 引擎在应用进程内（F5）：`ely_pdf_worker::serve` 与 `Worker::in_process`，同一帧协议。已做：拆库、线程版客户端、假循环单测。待审查
 - [ ] M2.3 手机启动：`ely_ui::run_android`，ElyMark 拆成库，`mobile/android` 的 Gradle 外壳与 `build.sh`。已做：Galaxy S25+ 上启动并画出首屏（截图看过）。待审查
 - [ ] M2.4 CI：`.github/workflows/mobile.yml` 只在 `mobile` 分支，Android 构建 APK、iOS 构建，桌面检查。已做：三项全绿（run 41266119589），模拟器上开窗、截图看过。待审查
 - [ ] M2.5 iOS 入口：gpui-mobile 的 `run_app` 接不上 `Assets`，须先给 gpui-mobile 加带资源的入口，再写 `ely_ui` 的 iOS 入口与 Xcode 工程。已做：`run_app_with_assets`（gpui-mobile b26dfde）、`ely_ui::run_ios`、`mobile/ios` 外壳与 CI 的模拟器冒烟与 IPA。CI 三项全绿（run 41268575093），模拟器截图看过（首屏、菜单栏；标题栏压在状态栏与灵动岛下，归 M2.7）；真机 IPA 未装。待审查
-- [ ] M2.6 手机上停用的桌面模块不再编进去：`opening` 的实例门、`updates`、`tray` 在 Android 上有未用告警（`ely-ui` 18 条）；`ely-office` 的 LOK 部分可选，ElyMark 不带 `ely-lok`。已做：`ely-ui` 桌面专用项按平台条件编译，Android 无告警；LOK 部分未做
-- [ ] M2.7 交给 M3：PDF 导出（MuPDF 交叉构建并链入，worker 临时文件改到缓存目录）；去掉自绘标题栏、按安全区留边；设置与新窗口改为窗口内的页；菜单改为工具栏；富剪贴板；分享打印；减少动效；日志文件；emoji 字体资源
+- [ ] M2.6 手机上停用的桌面模块不再编进去：`opening` 的实例门、`updates`、`tray` 在 Android 上有未用告警（`ely-ui` 18 条）；`ely-office` 的 LOK 部分可选，ElyMark 不带 `ely-lok`。已做：`ely-ui` 桌面专用项按平台条件编译，Android 无告警。LOK 可选移入 M2.7（遍及 `ely-office` 七个模块，ElyMark 带着它照样能编能跑）。待审查
+- [ ] M2.7 交给 M3：`ely-office` 的 LOK 部分可选（ElyMark 不带 `ely-lok`）；PDF 导出（MuPDF 交叉构建并链入，worker 临时文件改到缓存目录）；去掉自绘标题栏、按安全区留边；设置与新窗口改为窗口内的页；菜单改为工具栏；富剪贴板；分享打印；减少动效；日志文件；emoji 字体资源
