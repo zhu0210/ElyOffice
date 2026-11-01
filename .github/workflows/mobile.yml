@@ -35,6 +35,8 @@ jobs:
           export ANDROID_NDK_HOME="$ANDROID_NDK_LATEST_HOME"
           ELY_ABI=arm64-v8a mobile/android/build.sh
           ELY_ABI=x86_64 mobile/android/build.sh
+      - name: Disk back for the emulator
+        run: rm -rf target mobile/android/app/build/intermediates && df -h /
       - uses: actions/upload-artifact@v7
         with:
           name: ElyMark-debug.apk
