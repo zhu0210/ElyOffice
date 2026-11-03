@@ -10,11 +10,13 @@ targets:
     platform: iOS
     sources:
       - path: main.m
+      - path: Assets.xcassets
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.elyoffice.mark
         PRODUCT_NAME: ElyMark
         INFOPLIST_FILE: Info.plist
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         TARGETED_DEVICE_FAMILY: "1,2"
         CLANG_ENABLE_OBJC_ARC: YES
         ENABLE_DEBUG_DYLIB: NO

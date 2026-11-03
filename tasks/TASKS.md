@@ -548,4 +548,5 @@
 - [ ] M2.4 CI：`.github/workflows/mobile.yml` 只在 `mobile` 分支，Android 构建 APK、iOS 构建，桌面检查。已做：三项全绿（run 41266119589），模拟器上开窗、截图看过。待审查
 - [ ] M2.5 iOS 入口：gpui-mobile 的 `run_app` 接不上 `Assets`，须先给 gpui-mobile 加带资源的入口，再写 `ely_ui` 的 iOS 入口与 Xcode 工程。已做：`run_app_with_assets`（gpui-mobile b26dfde）、`ely_ui::run_ios`、`mobile/ios` 外壳与 CI 的模拟器冒烟与 IPA。CI 三项全绿（run 41268575093），模拟器截图看过（首屏、菜单栏；标题栏压在状态栏与灵动岛下，归 M2.7）；真机 IPA 未装。待审查
 - [ ] M2.6 手机上停用的桌面模块不再编进去：`opening` 的实例门、`updates`、`tray` 在 Android 上有未用告警（`ely-ui` 18 条）；`ely-office` 的 LOK 部分可选，ElyMark 不带 `ely-lok`。已做：`ely-ui` 桌面专用项按平台条件编译，Android 无告警。LOK 可选移入 M2.7（遍及 `ely-office` 七个模块，ElyMark 带着它照样能编能跑）。待审查
+- [ ] M2.8 手机图标：ElyMark 原有清单指向 `@mipmap/ic_launcher` 而无此资源。已做：`mobile/icons.sh` 由母版 `assets/icons/ely-mark.svg` 出 Android 自适应图标的前景与 iOS 的 AppIcon，Gradle 资源编译通过、预览看过。真机桌面未看。待审查
 - [ ] M2.7 交给 M3：`ely-office` 的 LOK 部分可选（ElyMark 不带 `ely-lok`）；PDF 导出（MuPDF 交叉构建并链入，worker 临时文件改到缓存目录）；去掉自绘标题栏、按安全区留边；设置与新窗口改为窗口内的页；菜单改为工具栏；富剪贴板；分享打印；减少动效；日志文件；emoji 字体资源
